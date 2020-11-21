@@ -1,0 +1,202 @@
+import pygame
+import random
+import time
+import sys
+from pygame.locals import *
+
+class Game:
+    def __init__(self):
+        self.reset = True
+        self.active = False
+        self.textEntered = ''
+        self.word = ''
+        self.startTime = 0
+        self.endTime = 0
+        self.accuracy = '0%'
+        self.wpm = 0
+        self.end = False
+        self.results = ""
+
+        pygame.init()
+        #background image
+        self.gameBackground = pygame.image.load("track.jpg")
+        self.gameBackground = pygame.transform.scale(self.gameBackground,(750,500))
+        # width and height of the screen
+        self.screen = pygame.display.set_mode((750,500))
+
+
+        running = True
+
+        #Title and Icon
+        pygame.display.set_caption("Wild Driving")
+
+        #loading the icon of the bicyle
+        self.icon = pygame.image.load('car(2).png')
+        pygame.display.set_icon(self.icon)
+
+        #clock = pygame.time.clock()
+
+        self.gameImage = pygame.image.load('car(2).png')
+        self.backgroundPic = pygame.image.load('road2.png')
+
+        self.roadstrips = pygame.image.load('roadstrips.png')
+        self.enemyPic = pygame.image.load("pinkcar.png")
+
+    def background(self):
+        self.screen.blit(self.backgroundPic,(100,-5))
+
+    def player(self,x,y):
+        # blit = draw
+        self.screen.blit(self.gameImage,(x,y))
+    def enemy(self,x1,y1):
+        self.screen.blit(self.enemyPic,(x1,y1))
+    def drawText(self, screen, msg, y, size, color):
+        font = pygame.font.Font(None,size)
+        text = font.render(msg,1,color)
+        text_rect = text.get_rect(center = (250,y))
+        screen.blit(text, text_rect)
+        pygame.display.update()
+
+
+    def getSentence(self):
+        file = open('text.txt')
+        file = file.read()
+        sentences = file.split('\n')
+        anySentence = random.choice(sentences)
+        return anySentence
+
+
+
+    def  getResults(self,screen):
+        if(not self.end):
+
+            #calculating the time
+            self.timeSpent = time.time() - self.startTime
+
+            #calculating accuracy
+            count = 0
+            for i,c in enumerate(self.word):
+                try:
+                    if self.textEntered[i] == c:
+                        count += 1
+                except:
+                    pass
+
+            self.accuracy = count/len(self.word)*100
+
+            #calculating the speed wpm
+            self.wpm = len(textEntered)*60 / (5*self.timeSpent)
+            self.end = True
+            print(timeSpent)
+            self.result = str(round(self.timeSpent))+ "acc" + str(round(self.accuracy))+ "wpm"+str(self.wpm)
+            print(str(round(self.timeSpent))+ "acc" + str(round(self.accuracy))+ "wpm"+str(self.wpm))
+            
+            pygame.display.update()
+
+
+    # Game Loop
+    def gameloop(self):
+        self.resetGame()
+        self.running = True
+
+        x = 225
+        y = 380
+
+        while self.running:
+            clock = pygame.time.Clock()
+
+            
+            pygame.draw.rect(self.screen,(40,40,40),(50,700,350,50))
+            self.drawText(self.screen, self.textEntered,  600,30,(0,0,0))
+            pygame.display.update()
+
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
+
+                #if keystroke is presses check whether it is right or left
+                if event.type == pygame.MOUSEBUTTONUP:
+                    pX, pY = pygame.mouse.get_pos()
+                    #position of input box
+                    if (pX >= 50 and pX<= 350 and pY >= 700  and pY<= 750 ):
+                        self.active = True
+                        self.textEntered = ''
+                        self.startTime = time.time()
+
+                    if ((pX <= 50 or pX>= 350) and pY >= 390  and self.end):
+                        self.resetGame()
+                        x,y = pygame.mouse.get_pos()
+
+
+                elif event.type == pygame.KEYDOWN:
+                    if self.active and not self.end:
+                        if event.key == pygame.K_RETURN:
+                            print(self.textEntered)
+                            self.getResults(self.screen)
+                            print(self.result)
+                            self.drawText(self.screen, self.results, 50, 28, (0,0,100))
+                            self.end = True
+                        elif event.key == pygame.K_BACKSPACE:
+                            self.textEntered = self.textEntered[:-1]
+
+                        else:
+                            try:
+                                self.textEntered += event.unicode
+                            except:
+                                pass
+            pygame.display.update()
+
+
+
+
+            #x += x_change
+
+
+            self.background()
+
+            #movingroad()
+            #obstacleStartY -= (obstacleSpeed/3)
+           # obstacle(obstacleStartX, obstacleStartY, obs)
+            #obstacleStartY += obstacleSpeed
+            self.player(x,y)
+            #scoreSystem(passed, score)
+
+        clock.tick(60)
+
+    def resetGame(self):
+        self.screen.blit(self.gameBackground,(0,0))
+        pygame.display.update()
+        time.sleep(1)
+
+        self.reset = False
+        self.end = False
+
+        self.textEntered = ''
+        self.word = ''
+        self.startTime = 0
+        self.totalTime = 0
+        self.wpm = 0
+
+        #getting a random sentence
+        self.word = self.getSentence()
+        if (not self.word) :
+            self.resetGame()
+
+        self.screen.fill((0,0,0))
+        self.screen.blit(self.gameBackground,(0,0))
+
+        msg = "Speedy"
+
+        self.drawText(self.screen, msg, 80, 50 , (255,0,0))
+
+        #input box
+        pygame.draw.rect(self.screen,(40,40,40),(50,700,350,50))
+
+        #draw the sentence string
+        self.drawText(self.screen, self.word, 180, 28, (100,100,100))
+        pygame.display.update()
+
+
+Game().gameloop()
