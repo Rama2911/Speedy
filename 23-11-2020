@@ -1,0 +1,221 @@
+import pygame
+import random
+import time
+import sys
+from pygame.locals import *
+
+
+class theGame:
+
+    def __init__(self):
+        self.reset = True
+        self.active = False
+        self.textEntered = ''
+        self.word = ''
+        self.startTime = 0
+        self.endTime = 0
+        self.accuracy = '0%'
+        self.wpm = 0
+        self.end = False
+        self.results = ""
+        self.lengthOfText = 0
+        self.check = ""
+        self.wordSame = ''
+        self.x1 = 20
+        self.y1 = 290
+        self.newSpeed = 0
+        pygame.init()
+        #background image
+        self.gameBackground = pygame.image.load("track.jpg")
+        self.gameBackground = pygame.transform.scale(self.gameBackground,(500,550))
+        # width and height of the screen
+        self.screen = pygame.display.set_mode((500,550))
+
+        #Title and Icon
+        pygame.display.set_caption("Wild Driving")
+
+        
+
+        #clock = pygame.time.clock()
+
+        self.player1 = pygame.image.load('car(3).png')
+        #self.player1 = pygame.transform.scale(self.player1,(100,100))
+        self.backgroundPic = pygame.image.load('theroad1.jpg')
+        self.backgroundPic = pygame.transform.scale(self.backgroundPic,(550,327))
+
+        self.roadstrips = pygame.image.load('roadstripschunks.png')
+        
+        self.roadstrips2 = pygame.image.load('roadstripschunks.png')
+        
+        self.enemyPic = pygame.image.load("pinkcar.png")
+
+    def drawText(self, screen, msg, y, size, color, x= 500//2):
+        font = pygame.font.Font(None,size)
+        text = font.render(msg,1,color)
+        text_rect = text.get_rect(center = (x,y))
+        screen.blit(text, text_rect)
+        pygame.display.update()
+
+
+    def getSentence(self):
+        file = open('text.txt')
+        file = file.read()
+        sentences = file.split('\n')
+        anySentence = random.choice(sentences)
+        self.lengthOfText = len(anySentence)
+        return anySentence
+
+
+    def  getResults(self,screen):
+        if(not self.end):
+
+            #calculating the time
+            self.timeSpent = time.time() - self.startTime
+
+            #calculating accuracy
+            count = 0
+            for i,c in enumerate(self.wordSame):
+                try:
+                    if self.textEntered[i] == c:
+                        count += 1
+                except:
+                    pass
+
+            self.accuracy = count/self.lengthOfText*100
+
+            #calculating the speed wpm
+            self.wpm = len(self.textEntered)*60 / (5*self.timeSpent)
+            self.end = False
+
+            self.result = str(round(self.timeSpent))+ "acc" + str((self.accuracy))+ "wpm"+str(self.wpm)
+            pygame.display.update()
+    def firstPlayer(self,x,y):
+        self.screen.blit(self.player1,(x,y))
+    def moveRoad(self, newSpeed):
+        self.x1 *= int(2*newSpeed)
+        self.screen.blit(self.player1,(self.x1, self.y1))
+        
+
+    def gameloop(self):
+        self.resetGame()
+        self.running = True
+        self.drawText(self.screen, self.word, 450, 28, (100,100,100))
+        while self.running:
+            clock = pygame.time.Clock()
+
+
+            pygame.draw.rect(self.screen,(40,40,40),(0,480,550,60))
+            self.drawText(self.screen, self.textEntered,495,30,(0,0,0))
+            pygame.display.update()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
+
+                #if keystroke is pressed check whether it is right or left
+                if event.type == pygame.MOUSEBUTTONUP:
+                    pX, pY = pygame.mouse.get_pos()
+
+                    #position of input box
+                    if (pX >= 0 and pX<= 500 and pY >= 480  and pY<= 550 ):
+                        self.active = True
+                        self.textEntered = ''
+                        self.startTime = time.time()
+
+
+                elif event.type == pygame.KEYDOWN:
+                    if self.active and not self.end:
+                        if event.key == pygame.K_RETURN:
+                            
+                            self.getResults(self.screen)
+                            self.drawText(self.screen, self.result, 30, 28, (0,0,255))
+                            self.end = True
+                        elif event.key == pygame.K_BACKSPACE:
+                            self.textEntered = self.textEntered[:-1]
+
+                        else:
+                            try:
+                                
+                                self.textEntered += event.unicode
+                                
+                                self.check = self.textEntered[-1]
+                                if self.check[0] == self.word[0] and self.textEntered == self.wordSame[:len(self.textEntered)]:
+                                    #self.getResults(self.screen)
+                                    #self.newSpeed = self.wpm
+                                    
+                                    #self.movePlayer(1)
+                                    self.word = self.word[1:]
+                                    self.check = ''
+                                    self.screen.fill((0,0,0),(0,435,550,50))
+                                    self.drawText(self.screen, self.word, 450, 28, (255,0,0))
+                                    pygame.display.update()
+                                    
+                                    
+                                ##
+                            except:
+                                pass
+            self.screen.blit(self.roadstrips,(-50,350))
+            self.screen.blit(self.roadstrips,(50,350))
+            self.screen.blit(self.roadstrips,(150,350))
+            self.screen.blit(self.roadstrips,(250,350))
+            self.screen.blit(self.roadstrips,(350,350))
+            self.screen.blit(self.roadstrips,(450,350))
+            self.screen.blit(self.roadstrips,(550,350))
+
+
+            self.screen.blit(self.roadstrips,(-50,190))
+            self.screen.blit(self.roadstrips,(50,190))
+            self.screen.blit(self.roadstrips,(150,190))
+            self.screen.blit(self.roadstrips,(250,190))
+            self.screen.blit(self.roadstrips,(350,190))
+            self.screen.blit(self.roadstrips,(450,190))
+            self.screen.blit(self.roadstrips,(550,190))
+            self.firstPlayer(self.x1, self.y1)
+            pygame.display.update()
+            
+
+        clock.tick(60)
+   
+        
+        
+    def resetGame(self):
+        self.screen.blit(self.gameBackground,(0,0))
+        pygame.display.update()
+        time.sleep(1)
+
+        self.reset = False
+        self.end = False
+
+        self.textEntered = ''
+        self.word = ''
+        self.startTime = 0
+        self.totalTime = 0
+        self.wpm = 0
+
+        #getting a random sentence
+        self.word = self.getSentence()
+        for i in self.word:
+            self.wordSame += i
+        if (not self.word) :
+            self.resetGame()
+
+        self.screen.fill((0,0,0))
+        self.screen.blit(self.backgroundPic,(0,110))
+
+        msg = "Speedy"
+
+        self.drawText(self.screen, msg, 50, 50 , (255,0,0))
+
+        #input box
+        pygame.draw.rect(self.screen,(40,40,40),(0,480,550,30))
+
+        #draw player1 car
+        
+       
+        
+        pygame.display.update()
+
+
+theGame().gameloop()
+print(self.lengthOfText) 
