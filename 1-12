@@ -1,0 +1,890 @@
+import pygame
+import random
+import time
+import sys
+from pygame.locals import *
+import socket
+
+
+
+class buildConnection:
+
+    def __init__(self,ipaddress,portnum):
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.ipaddress = ipaddress
+        self.portnum = portnum
+
+    #this function connects the socket to the ipaddress and port
+    # it returns the socket
+    def startConnection(self):
+
+        self.s.connect((self.ipaddress,self.portnum))
+        return self.s
+
+
+        #this helper function leftrotate the value used in the digested message
+    def leftrotate (self,x, c):
+        return ((x << c)&0xFFFFFFFF) | (x >> (32-c)&0x7FFFFFFF>>(32-c))
+
+    # this helper function gets the digested message
+    # it does what was implemented in the pseudo code for MD5
+    def getMessageDigest(self,theBlock, message, lengthOfMessage):
+        n = 32
+        m = 0
+        listOfChunks = []
+        sumOfAscii = 0
+        M = []
+        # making the length of the message 3 digits
+        while len(lengthOfMessage) < 3:
+            lengthOfMessage = "0" + lengthOfMessage
+
+        #adding the block as many times as possible to make the string 512 chr
+        while len(theBlock) < 512:
+            # if adding the block once more would make the whole string > 512
+
+            if (len(theBlock+message) + 3) > 512:#3 for size written at the end
+                #we fill zeroes in the gap
+                while len(theBlock) < (509):
+                    theBlock += "0"
+                #concatenating the size
+                theBlock += lengthOfMessage
+            else:
+                theBlock += message
+
+        for i in range(16):
+            listOfChunks.append(theBlock[m:n])
+            n += 32
+            m += 32
+
+        for lst in listOfChunks:
+            for chr in lst:
+                sumOfAscii += ord(chr)
+            M.append(sumOfAscii)
+            sumOfAscii = 0
+
+        p = [7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 5, 9, 14,
+        20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 4, 11, 16, 23, 4, 11, 16, 23,
+        4, 11, 16, 23, 4, 11, 16, 23,  6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21]
+
+
+        k = [0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,  0xf57c0faf, 0x4787c62a,
+        0xa8304613, 0xfd469501 ,0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be ,
+        0x6b901122, 0xfd987193, 0xa679438e, 0x49b40821 ,0xf61e2562, 0xc040b340, 0x265e5a51,
+        0xe9b6c7aa, 0xd62f105d, 0x02441453, 0xd8a1e681, 0xe7d3fbc8, 0x21e1cde6, 0xc33707d6,
+        0xf4d50d87, 0x455a14ed, 0xa9e3e905, 0xfcefa3f8, 0x676f02d9, 0x8d2a4c8a ,0xfffa3942,
+        0x8771f681, 0x6d9d6122, 0xfde5380c , 0xa4beea44, 0x4bdecfa9, 0xf6bb4b60, 0xbebfbc70,
+        0x289b7ec6, 0xeaa127fa, 0xd4ef3085, 0x04881d05, 0xd9d4d039, 0xe6db99e5, 0x1fa27cf8,
+            0xc4ac5665, 0xf4292244, 0x432aff97, 0xab9423a7, 0xfc93a039, 0x655b59c3, 0x8f0ccc92,
+            0xffeff47d, 0x85845dd1, 0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1,  0xf7537e82,
+            0xbd3af235, 0x2ad7d2bb, 0xeb86d391 ]
+
+        a0 = 0x67452301
+        b0 = 0xefcdab89
+        c0 = 0x98badcfe
+        d0 = 0x10325476
+        A = a0
+        B = b0
+        C = c0
+        D = d0
+
+        #Main loop:
+
+        for i in range(64):
+            if 0 <= i <= 15:
+                F = (B & C) | ((~B) & D)
+                F = F & 0xFFFFFFFF
+                g = i
+
+            elif 16 <= i<= 31:
+                F = (D & B) | ((~D) & C)
+                F = F & 0xFFFFFFFF
+                g = (5*i + 1) % 16
+
+
+            elif 32 <= i <= 47:
+                F = B^ C^ D
+                F = F & 0xFFFFFFFF
+                g = (3*i + 5) % 16
+
+            elif 48 <= i <= 63:
+                F = C^ (B | (~D))
+                F = F & 0xFFFFFFFF
+                g = (7*i) % 16
+            dTemp = D
+            D = C
+            C = B
+            B = B + self.leftrotate((A + F + k[i] + M[g]), p[i])
+            B = B & 0xFFFFFFFF
+            A = dTemp
+
+
+        #Add this chunk’s hash to result so far:
+        a0 = (a0 + A) & 0xFFFFFFFF
+        b0 = (b0 + B) & 0xFFFFFFFF
+        c0 = (c0 + C) & 0xFFFFFFFF
+        d0 = (d0 + D) & 0xFFFFFFFF
+        result = str(a0) + str(b0) + str(c0) + str(d0)
+        return result
+
+    #this function takes the username and password of a user
+    # it returns if the connection to the server was successful or not
+    def login(self,username, password, s):
+
+        loginStatement =  'LOGIN '+ username +"\n"
+
+        s.send(loginStatement.encode())
+        response = s.recv(1000)
+        response = response.decode()
+        # the challenge is sent in this format “LOGIN username CHALLENGE”
+        # Login length = 5 and two spaces then the challenge starts
+        challenge = response[7+len(username):]
+        # concatenating the password and challenge in one message
+        message = password + challenge
+        lengthOfMessage = str(len(message))
+        #the first string of the block sent must be followed by 1
+        theBlock = message + "1"
+
+        #concatenated statement of the form ”LOGIN username messagedigest\n“
+        concat1 = "LOGIN " + username + " "
+        digestedmessage = self.getMessageDigest(theBlock,message, lengthOfMessage)
+        concatenation = concat1 + digestedmessage + "\n"
+        self.s.send(concatenation.encode())
+        #receiving the second response to know if the connection succeeds
+        response2 = s.recv(1000)
+        response2 = response2.decode()
+
+        return "Login Successful" in response2
+
+
+    #this function returns the list of active users
+    def getUsers(self):
+        lst = []
+        name = ""
+        self.s.send("@users".encode())
+        stringOfUsers = self.s.recv(1000)
+        stringOfUsers = stringOfUsers.decode()
+        #size is the first 5 chr after the first "@"
+        size = int(stringOfUsers[1:6])
+        #checking if the size > 1000 to recieve again the rest of the message
+        if size > 1000:
+            msg = self.s.recv(size-1000)
+            msg = msg.decode()
+            stringOfUsers += msg
+        #removing @size@users@ from message of the form @size@users@n@[user1]..
+        #looping to get the names of users
+        for i in stringOfUsers[13:]:
+            if i == "@":
+                lst.append(name)
+                name = ""
+            else:
+                name += i
+        #appending the last name in the list
+        lst.append(name)
+        # removing the first elt which represents the number of users
+        lst = lst[1:]
+        return lst
+
+    #function takes a username and a message and send it to the user
+    def sendMessage(self,friend, message):
+
+        sizeOfString = str(7 + len(friend)+len(message)+len("@sendmsg@"))
+        while len(sizeOfString) < 5:
+            sizeOfString = "0" + sizeOfString
+
+        #concatenate the message in form @size@sendmsg@[username]@[messageText]
+        theStatement= "@" + sizeOfString + "@sendmsg@" + friend + "@" + message
+        self.s.send(theStatement.encode())
+        response = self.s.recv(10000)
+        response = response.decode()
+        return "@ok" in response
+
+
+
+    def getMail(self,soc):
+
+        tupleOfMsg = ()
+        lstOfMsg = []
+        tupleOfFile = ()
+        lstOfFile = []
+
+        soc.send("@rxmsg".encode())
+        stringOfMail = soc.recv(1000)
+        stringOfMail = stringOfMail.decode()
+
+        #get ["msg",username, message,"file", username, filename, filecontent..
+        lst = self.sliceString(stringOfMail,"")
+
+        for i in range(len(lst)-1):
+            #create a tuple (user, message) and append it to lstOfMsg
+            if lst[i] == "msg":
+
+
+                tupleOfMsg = (lst[i+1],lst[i+2])
+                lstOfMsg.append(tupleOfMsg)
+
+            #create a tuple (user, filename)and append it to lstOfFile
+            elif lst[i] == "file":
+
+                tupleOfFile = (lst[i+1],lst[i+2])
+                #creating a file f that writes the file content and saves it
+                # it is saved in local directory under the filename it got
+                f = open(lst[i+2],"w")
+                script = f.write(lst[i+3])
+                f.close()
+                lstOfFile.append(tupleOfFile)
+
+        return (lstOfMsg,lstOfFile)
+
+class loggingIn(buildConnection):
+
+    def __init__(self):
+        self.screen1 = pygame.display.set_mode((300, 300))
+        self.running1 = ''
+        self.username = ''
+        self.password = ''
+        self.newConn = ''
+        self.pressed1 = False
+        self.pressed2 = False
+        self.s = ''
+
+
+    def drawBoxes(self):
+        pygame.init()
+        pygame.draw.rect(self.screen1,(40,40,40),(5,50,290,40))
+        self.drawText(self.screen1, "Username: ", 40, 28, (100,100,100),60)
+
+        pygame.draw.rect(self.screen1,(40,40,40),(5,150,290,40))
+        self.drawText(self.screen1, "Password: ", 140, 28, (100,100,100),60)
+
+        pygame.draw.rect(self.screen1,(200,200,200),(100,220,80,40))
+        self.drawText(self.screen1, "Okay", 240, 28, (0,0,0), 135)
+
+        pygame.display.update()
+
+    def getCred(self):
+        self.running1 = True
+        self.drawBoxes()
+        while self.running1:
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                    quit()
+
+
+
+                #if keystroke is pressed check whether it is right or left
+                if event.type == pygame.MOUSEBUTTONUP:
+                    pX, pY = pygame.mouse.get_pos()
+
+                    #position of input box
+                    if (pX >= 50 and pX<= 260 and pY >= 50  and pY<= 90):
+                        self.pressed1 = True
+                        self.pressed2 = False
+
+                    elif (pX >= 50 and pX<= 260 and pY >= 150  and pY<= 190):
+                        self.pressed2 = True
+                        self.pressed1 = False
+
+
+                    elif (pX >= 100 and pX<= 180 and pY >= 220  and pY<= 260):
+                        #creating a connection with the server
+                        self.s = buildConnection("86.36.46.10", 15112)
+                        self.s = self.s.startConnection()
+                        response = self.login(self.username, self.password, self.s)
+                        if response == True:
+
+                            getPlayer2(myLogIn).pickOne()
+
+                        else:
+                            self.username = ''
+                            self.password = ''
+                            self.drawBoxes()
+
+                if event.type == pygame.KEYDOWN:
+
+
+                    if event.key == pygame.K_BACKSPACE and self.pressed1==True:
+                        self.username = self.username[:-1]
+                        pygame.draw.rect(self.screen1,(40,40,40),(5,50,290,40))
+
+                        self.drawText(self.screen1, self.username, 65, 20, (0,0,255),100)
+                        pygame.display.update()
+
+                    if event.key == pygame.K_BACKSPACE and self.pressed2==True:
+                        self.password = self.password[:-1]
+                        pygame.draw.rect(self.screen1,(40,40,40),(5,150,290,40))
+
+                        self.drawText(self.screen1, "*" * len(self.password), 165, 30, (0,0,255),100)
+                        pygame.display.update()
+
+
+                    elif self.pressed1==True and event.key != pygame.K_BACKSPACE :
+                        self.username += event.unicode
+
+
+                        pygame.draw.rect(self.screen1,(40,40,40),(5,50,290,40))
+                        pygame.draw.rect(self.screen1,(0,0,0),(0,50,5,40))
+                        pygame.draw.rect(self.screen1,(0,0,0),(290,50,5,40))
+                        self.drawText(self.screen1, self.username, 65, 20, (0,0,255),100)
+                        pygame.display.update()
+
+                    elif self.pressed2== True and event.key != pygame.K_BACKSPACE:
+                        self.password += event.unicode
+
+
+                        pygame.draw.rect(self.screen1,(40,40,40),(5,150,290,40))
+                        pygame.draw.rect(self.screen1,(0,0,0),(0,150,5,40))
+                        pygame.draw.rect(self.screen1,(0,0,0),(290,150,5,40))
+
+                        self.drawText(self.screen1, "*" * len(self.password), 165, 30, (0,0,255),100)
+                        pygame.display.update()
+
+
+
+
+    def drawText(self, screen, msg, y, size, color, x):
+        font = pygame.font.Font(None,size)
+        text = font.render(msg,1,color)
+        text_rect = text.get_rect(center = (x,y))
+        screen.blit(text, text_rect)
+        pygame.display.update()
+
+
+    def sliceString(self,stringOfMail,word):
+        lst = []
+        #size is the first 5 chr after the first "@"
+        size = int(stringOfMail[1:6])
+         #checking if the size > 1000 to recieve again the rest of the message
+        if size > 1000:
+            msg = self.s.recv(size-1000)
+            msg = msg.decode()
+            stringOfMail += msg
+        #removing @size@ from message of form @size@n@msg@[user1]@[message1]..
+        for i in stringOfMail[7:]:
+            if i == "@":
+                lst.append(word)
+                word = ""
+            else:
+                word += i
+        #appending the last name in the list
+        lst.append(word)
+        return lst
+
+
+class getPlayer2( loggingIn):
+
+
+    def __init__(self, class_b):
+        pygame.init()
+        self.listscreen = pygame.display.set_mode((200, 200))
+        self.username2 = ''
+        self.username = class_b.username
+        self.x = 20
+        self.y = 30
+        self.h = 0
+        self.s = class_b.s
+        self.down = 0
+        self.up = 0
+        self.class_b = class_b
+        self.dictOfP = {}
+        self.listOfP =[]
+        self.listOfReq = {}
+
+
+    def getListOfPlayers(self):
+        self.listOfP = self.class_b.getUsers()
+
+        self.h = 30 + len(self.listOfP)*20
+
+
+        for i in self.listOfP:
+            self.dictOfP[5,self.y] = i
+            self.drawText(self.listscreen, i, self.y, 20, (100,100,100))
+            self.y += 20
+
+
+
+    def pickOne(self):
+        running = True
+
+        self.getListOfPlayers()
+        self.x = 0
+        self.y  = 30
+        while running:
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    quit()
+
+
+
+                #if keystroke is pressed check whether it is right or left
+                if event.type == pygame.MOUSEBUTTONUP:
+                    pX, pY = pygame.mouse.get_pos()
+
+
+
+                    for i in self.dictOfP:
+
+                        if (pX >= 50 and pX<= 160 and pY >= i[1]  and pY<= i[1] + 20):
+                            self.username2 = self.dictOfP[i]
+                            self.class_b.sendMessage(self.username2, self.username+": Do you want to play with me?")
+                            theGame(myLogIn,self.username2).gameloop()
+
+
+
+
+                elif event.type == pygame.KEYDOWN:
+
+                    if event.key == pygame.K_UP:
+
+                        self.listscreen.fill((0,0,0))
+                        if self.down == 0:
+                            self.down = 1
+                        for i in self.listOfP[self.down -1:]:
+                            self.dictOfP = {}
+                            self.dictOfP[5,self.y] = i
+                            self.drawText(self.listscreen, i, self.y, 20, (100,100,100))
+                            self.y += 20
+
+                        self.down -= 1
+                        pygame.display.update()
+
+                        self.y = 30
+
+
+                    elif event.key == pygame.K_DOWN:
+                        self.down += 1
+
+                        self.listscreen.fill((0,0,0))
+                        for i in self.listOfP[self.down:]:
+                            self.dictOfP = {}
+                            self.dictOfP[5,self.y] = i
+                            self.drawText(self.listscreen, i, self.y, 20, (100,100,100))
+                            self.y += 20
+
+                        pygame.display.update()
+
+                        self.y = 30
+
+            therequests = self.class_b.getMail(self.s)
+            if therequests != ([],[]):
+                k = 10
+                for i in therequests[0]:
+                    screen3 = pygame.display.set_mode((500, 200))
+                    pygame.init()
+
+                    self.drawText(screen3, i[1], k, 20, (100,100,100),500)
+
+                    pygame.draw.rect(screen3,(40,40,40),(400,k,50,20))
+
+
+                    self.drawText(screen3, "Yes", k, 20, (100,100,100),850)
+
+                    self.listOfReq[425,k] = i[0]
+                    k += 10
+                    pygame.display.update()
+
+            if event.type == pygame.MOUSEBUTTONUP:
+                pX2, pY2 = pygame.mouse.get_pos()
+
+
+
+                for i in self.listOfReq:
+
+                    if (pX2 >= 425 and pX2<= 445 and pY2 >= i[1]  and pY2<= i[1] + 20):
+                        self.username2 = self.listOfReq[i]
+
+                        theGame(myLogIn,self.username2).gameloop()
+
+            pygame.display.update()
+
+
+
+
+    def drawText(self, screen, msg, y, size, color, x = 200):
+        font = pygame.font.Font(None,size)
+        text = font.render(msg,1,color)
+        text_rect = text.get_rect(center = (x//2,y))
+        screen.blit(text, text_rect)
+        pygame.display.update()
+
+
+
+
+
+
+class theGame(loggingIn, buildConnection):
+
+    def __init__(self, class_a, player2):
+
+        self.player1 = ""
+        self.player2 = ""
+        self.roadstrips = ""
+        self.roadstrips2 = ""
+        self.screen = ""
+        self.txt = ""
+        self.active = False
+
+        self.textEntered = ''
+        self.word = ''
+        self.startTime = 0
+        self.endTime = 0
+        self.accuracy = '0%'
+        self.wpm = 0
+        self.end = False
+        self.results = ""
+        self.lengthOfText = 0
+        self.check = ""
+        self.wordSame = ''
+        self.xroad1 = -50
+        self.yroad1 = 300
+        self.xroad2 = -50
+        self.yroad2 = 140
+        self.newSpeed = 0
+
+        self.gameBackground = ""
+        self.font = ""
+        self.s = class_a.s
+        self.username = class_a.username
+        self.username2 = player2
+
+
+        pygame.init()
+        #background image
+        self.gameBackground = pygame.image.load("track.jpg")
+        self.gameBackground = pygame.transform.scale(self.gameBackground,(500,550))
+        # width and height of the screen
+        self.screen = pygame.display.set_mode((500,550))
+
+        #Title and Icon
+        pygame.display.set_caption("Speedy" + "With" + self.username2)
+
+
+
+        #clock = pygame.time.clock()
+
+        self.player1 = pygame.image.load('car(3).png')
+
+        self.backgroundPic = pygame.image.load('theroad.jpg')
+        self.backgroundPic = pygame.transform.scale(self.backgroundPic,(550,327))
+
+        self.roadstrips = pygame.image.load('roadstrips.png')
+        self.roadstrips = pygame.transform.scale(self.roadstrips,(600,110))
+
+        self.roadstrips2 = pygame.image.load('roadstrips.png')
+        self.roadstrips2 = pygame.transform.scale(self.roadstrips2,(600,110))
+
+        self.player2 = pygame.image.load("pinkcar5.png")
+    def getSentence(self):
+        file = open('text.txt')
+        file = file.read()
+        sentences = file.split('\n')
+        anySentence = random.choice(sentences)
+        self.lengthOfText = len(anySentence)
+        return anySentence
+
+
+
+    def gameloop(self):
+        self.resetGame()
+        self.running = True
+        self.drawText(self.screen, self.word, 450, 28, (100,100,100))
+
+        self.firstPlayer(20,300)
+        self.secondPlayer(20,150)
+        xroad = -50
+
+        while self.running:
+            clock = pygame.time.Clock()
+
+
+            pygame.draw.rect(self.screen,(40,40,40),(0,480,550,60))
+            #self.drawText(self.screen, self.textEntered,495,30,(0,0,0), 500//2)
+            pygame.display.update()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                    pygame.quit()
+                    quit()
+
+                #if keystroke is pressed check whether it is right or left
+                if event.type == pygame.MOUSEBUTTONUP:
+                    pX, pY = pygame.mouse.get_pos()
+
+                    #position of input box
+                    if (pX >= 0 and pX<= 500 and pY >= 480  and pY<= 550 ):
+                        self.active = True
+                        self.textEntered = ''
+                        self.startTime = time.time()
+
+
+                if event.type == pygame.KEYDOWN:
+                    if self.active and not self.end:
+
+                        if event.key == pygame.K_BACKSPACE:
+                            self.textEntered = self.textEntered[:-1]
+
+                        else:
+                            try:
+                                self.textEntered += event.unicode
+                                self.check = textEntered[-1]
+                                if self.check[0] == self.word[0] and textEntered == self.wordSame[:len(textEntered)]:
+                                    self.getResults(self.screen)
+                                    self.newSpeed = self.wpm /2
+
+
+
+
+                                    self.word = self.word[1:]
+                                    self.check = ''
+                                    #0,435,550,50
+                                    self.screen.fill((0,0,0),(x1,y1,w1,h1))
+                                    self.drawText(self.screen, self.word,450 , 28, (255,0,0))
+                                    pygame.display.update()
+
+                            except:
+                                pass
+
+
+            if self.receivingTheCommands == 300:
+                yroad1 = 300
+                xroad1 = xroad1 + self.newSpeed
+                if xroad1 > 500:
+                    xroad1 = 0
+                    self.screen.fill((0,0,0),(xroad1, yroad1, 500, 110))
+                    self.screen.blit(self.roadstrips,[xroad1 - 540,yroad1])
+                    self.screen.blit(self.roadstrips,[xroad1 ,yroad1])
+                    pygame.display.update()
+
+
+                # self.X = self.getNewXroad(self.textEntered, 0,435,550,50, 140,300)
+                # self.blitRoad(self.X)
+                self.sendingTheCommands(self.username2, self.X, 0,435,550,50,140,300)
+            elif self.receivingTheCommands == 140:
+                yroad2 = 140
+                xroad2 = xroad2 + self.newSpeed
+                if xroad2 > 500:
+                    xroad2 = 0
+                    self.screen.fill((0,0,0),(xroad2, yroad2, 500, 110))
+                    self.screen.blit(self.roadstrips,[xroad2 - 540,yroad2])
+                    self.screen.blit(self.roadstrips,[xroad2 ,yroad2])
+                    pygame.display.update()
+
+
+                # self.X = self.getNewXroad(self.textEntered, 0,435,550,50, 140,300)
+                # self.blitRoad(self.X)
+                self.sendingTheCommands(self.username2, self.X, 0,435,550,50,140,300)
+
+            self.drawText(self.screen, self.textEntered, 495, 28, (100,100,100))
+            pygame.display.update()
+            pygame.display.update()
+            self.receivingTheCommands()
+
+            pygame.display.update()
+
+
+            clock.tick(60)
+
+
+
+    def resetGame(self):
+        self.screen.blit(self.gameBackground,(0,0))
+        pygame.display.update()
+        time.sleep(1)
+
+        self.reset = False
+        self.end = False
+
+        self.textEntered = ''
+        self.word = ''
+        self.startTime = 0
+        self.totalTime = 0
+        self.wpm = 0
+
+        #getting a random sentence
+        self.word = self.getSentence()
+        for i in self.word:
+            self.wordSame += i
+        if (not self.word) :
+            self.resetGame()
+
+        self.screen.fill((0,0,0))
+        self.screen.blit(self.backgroundPic,(0,110))
+
+        msg = "Play" + "With" + self.username2
+
+        self.drawText(self.screen, msg, 50, 50 , (255,0,0))
+
+        #input box
+        pygame.draw.rect(self.screen,(40,40,40),(0,480,550,30))
+
+        #draw player1 car
+
+        self.screen.blit(self.roadstrips2,(-50,140))
+        self.screen.blit(self.roadstrips,(-50,300))
+        self.firstPlayer(20,300)
+        self.secondPlayer(20,150)
+
+
+
+
+
+
+
+    def firstPlayer(self,x,y):
+        self.screen.blit(self.player1,(x,y))
+
+
+    def secondPlayer(self, x,y):
+        self.screen.blit(self.player2,(x,y))
+
+
+    def getNewXroad (self, txt, x1,y1,w1,h1, xroad,yroad):
+
+        try:
+
+            self.check = txt[-1]
+            if self.check[0] == self.word[0] and txt == self.wordSame[:len(txt)]:
+                self.getResults(self.screen)
+                self.newSpeed = self.wpm /2
+
+
+
+
+                self.word = self.word[1:]
+                self.check = ''
+                #0,435,550,50
+                self.screen.fill((0,0,0),(x1,y1,w1,h1))
+                self.drawText(self.screen, self.word,450 , 28, (255,0,0))
+                pygame.display.update()
+
+
+
+        except:
+            pass
+
+
+        xroad = xroad + self.newSpeed
+        if xroad > 500:
+            xroad = 0
+            self.screen.fill((0,0,0),(xroad, yroad, 500, 110))
+            self.screen.blit(self.roadstrips,[xroad - 540,yroad])
+            self.screen.blit(self.roadstrips,[xroad ,yroad])
+            pygame.display.update()
+
+
+        return xroad
+
+    def blitRoad(self, xroad, yroad):
+        if xroad > 500:
+            xroad = 0
+            self.screen.fill((0,0,0),(xroad, yroad, 500, 110))
+            self.screen.blit(self.roadstrips,[xroad - 540,yroad])
+            self.screen.blit(self.roadstrips,[xroad ,yroad])
+            pygame.display.update()
+
+
+    def sendingTheCommands(self,p, newX, x1,y1,w1,h1,xroad, yroad):
+        stringOfComm = ''
+        stringOfComm = str(newX) +"@"+ str(x1) + "@"+str(y1)+ "@"
+        stringOfComm += str(w1)+"@"+ str(h1) + "@"+str(xroad) + "@"+str(yroad)
+        print(stringOfComm)
+        reply = self.sendMessage(p, stringOfComm)
+        if reply == True:
+            return True
+
+
+
+
+    def receivingTheCommands(self):
+        theComm = ""
+        x1 = y1 = w1= h1 = xroad = yroad = 0
+        msg = self.getMail(self.s)
+        print(msg)
+        if msg != ([],[]):
+            for i in msg[0]:
+                if i[0] == self.username2:
+
+                    theComm += i[1]
+
+            if theComm:
+                theComm = theComm.split("@")
+
+                x1 = theComm[0]
+                y1 = theComm[1]
+                w1 = theComm[2]
+                h1 = theComm[3]
+                xroad = theComm[4]
+                yroad = theComm[5]
+
+
+                self.blitRoad(xroad, yroad)
+        return yroad
+
+    def  getResults(self,screen):
+        if(not self.end):
+
+            #calculating the time
+            self.timeSpent = time.time() - self.startTime
+
+            #calculating accuracy
+            count = 0
+            for i,c in enumerate(self.wordSame):
+                try:
+                    if self.textEntered[i] == c:
+                        count += 1
+                except:
+                    pass
+
+            self.accuracy = count/self.lengthOfText*100
+
+            #calculating the speed wpm
+            self.wpm = len(self.textEntered)*60 / (5*self.timeSpent)
+            self.end = False
+
+            self.result = str(round(self.timeSpent))+ "acc" + str((self.accuracy))+ "wpm"+str(self.wpm)
+            pygame.display.update()
+
+
+
+    def drawText(self, screen, msg, y, size, color):
+        font = pygame.font.Font(None,size)
+        text = font.render(msg,1,color)
+        text_rect = text.get_rect(center = (500//2,y))
+        screen.blit(text, text_rect)
+        pygame.display.update()
+
+
+    def sliceString(self,stringOfMail,word):
+        lst = []
+        #size is the first 5 chr after the first "@"
+        size = int(stringOfMail[1:6])
+         #checking if the size > 1000 to recieve again the rest of the message
+        if size > 1000:
+            msg = self.s.recv(size-1000)
+            msg = msg.decode()
+            stringOfMail += msg
+        #removing @size@ from message of form @size@n@msg@[user1]@[message1]..
+        for i in stringOfMail[7:]:
+            if i == "@":
+                lst.append(word)
+                word = ""
+            else:
+                word += i
+        #appending the last name in the list
+        lst.append(word)
+        return lst
+
+myLogIn = loggingIn()
+
+
+#Conn = buildConnection()
+
+myLogIn.getCred()
+myGame = theGame(myLogIn)
+
+
