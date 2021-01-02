@@ -490,7 +490,7 @@ class getPlayer2( loggingIn):
                     pygame.display.update()
         else:
             pass
-     def pickOne(self):
+    def pickOne(self):
         running = True
 
         self.getListOfPlayers()
@@ -537,7 +537,9 @@ class getPlayer2( loggingIn):
 
 
     def chooseOne(self):
+        running = True
 
+        while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
