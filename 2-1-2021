@@ -455,6 +455,7 @@ class getPlayer2( loggingIn):
         self.toPlayWith = []
         self.reqSent = []
         self.myReq = []
+        self.word = ""
 
 
     def getSentence(self):
@@ -614,13 +615,14 @@ class getPlayer2( loggingIn):
                                 self.reqSent = newToPlay
                                 self.class_b.sendMessage(i[0],"Start Game")
                                 word = self.getSentence()
+                                self.word = word
                                 theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 300,word)
 
                 for req in  self.myReq:
                     if response != ([],[]):
                         for i in response[0]:
                             if i[0] == req and i[1] == "Start Game":
-                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 140,word)
+                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 140,self.word)
 
 
 
@@ -912,7 +914,7 @@ class theGame(loggingIn, buildConnection):
         for i in self.word:
             self.wordSame += i
         if (not self.word) :
-            self.resetGame(p2)
+            self.resetGame(p2,word)
 
         self.screen.fill((0,0,0))
         self.screen.blit(self.backgroundPic,(0,110))
