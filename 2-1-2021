@@ -578,7 +578,8 @@ class getPlayer2( loggingIn):
 
     def chooseOne(self):
         running = True
-
+        self.myReq = self.class_b.getRequests()
+         
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
