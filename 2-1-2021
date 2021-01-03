@@ -455,15 +455,16 @@ class getPlayer2( loggingIn):
         self.reqSent = []
         self.myReq = []
         self.word = ""
+        self.screen3 = ""
 
     def textObjects(self,text,font):
         textsurface = font.render(text,True,[255,255,255])
         return textsurface,textsurface.get_rect()
 
-    def showMessage(self,text,screen):
+    def showMessage(self,text,screen,x):
         largeText = pygame.font.Font("freesansbold.ttf",11)
         textsurf,textrect = self.textObjects(text,largeText)
-        textrect.center = ((100),(100))
+        textrect.center = ((x),(100))
         screen.blit(textsurf,textrect)
         pygame.display.update()
         time.sleep(2)
@@ -531,21 +532,22 @@ class getPlayer2( loggingIn):
         running = True
         therequests = self.class_b.getRequests()
         self.myReq = therequests
+
         if therequests != []:
 
             k = 10
-            screen3 = pygame.display.set_mode((500, 200))
+            self.screen3 = pygame.display.set_mode((500, 200))
             pygame.init()
 
             for i in therequests:
                 if i not in self.listOfReq:
 
-                    self.drawText(screen3, i + ": Do you want to play?", k, 20, (100,100,100),300)
+                    self.drawText(self.screen3, i + ": Do you want to play?", k, 20, (100,100,100),300)
 
-                    pygame.draw.rect(screen3,(40,40,40),(400,k-10,50,20))
+                    pygame.draw.rect(self.screen3,(40,40,40),(400,k-10,50,20))
 
 
-                    self.drawText(screen3, "Yes", k, 20, (0,0,0),850)
+                    self.drawText(self.screen3, "Yes", k, 20, (0,0,0),850)
 
                     self.listOfReq[i] = k
                     k += 50
@@ -575,7 +577,8 @@ class getPlayer2( loggingIn):
 
                                 self.class_b.acceptFriendRequest(i)
                                 self.class_b.sendMessage(self.username2,"YES")
-                                print("yes sent")
+                                self.showMessage("Request accepted.",self.screen3,250)
+                                self.getListOfPlayers()
 
                         pygame.display.update()
 
@@ -611,7 +614,7 @@ class getPlayer2( loggingIn):
 
                             self.username2 = self.dictOfP[i]
                             self.class_b.sendFriendRequest(self.username2)
-                            self.showMessage("Request sent to "+self.username2 , self.listscreen)
+                            self.showMessage("Request sent to "+self.username2 , self.listscreen,100)
                             self.reqSent.append(self.username2)
                             self.getListOfPlayers()
 
@@ -1037,5 +1040,3 @@ myLogIn = loggingIn()
 
 myLogIn.getCred()
 myGame = theGame(myLogIn)
-
-
