@@ -525,16 +525,16 @@ class getPlayer2( loggingIn):
 
 
     def pickOne(self):
-
+        
         self.x = 0
         self.y  = 30
         self.toPlayWith = []
         running = True
         therequests = self.class_b.getRequests()
-        self.myReq = therequests
-
+        
+        
         if therequests != []:
-
+            self.myReq = therequests
             k = 10
             self.screen3 = pygame.display.set_mode((500, 200))
             pygame.init()
@@ -666,14 +666,20 @@ class getPlayer2( loggingIn):
                                         newToPlay.append(n)
                                 self.reqSent = newToPlay
 
-                                print("start sent")
+
                                 word = self.getSentence()
                                 self.word = word
                                 self.class_b.sendMessage(i[0],"Start Game"+ self.word)
-                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 300,self.word)
+                                print("Start Game"+ self.word)
+                                print("start sent")
 
+                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 300,self.word)
+                    print("it isss:  ")
+                    print(self.myReq)
                     for req in  self.myReq:
                         for i in response[0]:
+                            print("here: ")
+                            print(i[1])
                             if i[0] == req and "Start Game" == i[1][:10]:
                                 self.word = i[1][10:]
                                 print("start received")
@@ -681,7 +687,7 @@ class getPlayer2( loggingIn):
 
 
                 therequests = self.class_b.getRequests()
-                self.myReq = therequests
+
                 if therequests != []:
                     self.pickOne()
 
@@ -1040,3 +1046,5 @@ myLogIn = loggingIn()
 
 myLogIn.getCred()
 myGame = theGame(myLogIn)
+
+
