@@ -386,8 +386,8 @@ class loggingIn(buildConnection):
 
 
                         pygame.draw.rect(self.screen1,(40,40,40),(5,50,290,40))
-                        pygame.draw.rect(self.screen1,(0,0,0),(0,50,5,40))
-                        pygame.draw.rect(self.screen1,(0,0,0),(290,50,5,40))
+                        pygame.draw.rect(self.screen1,(40,40,40),(5,50,290,40))
+
                         self.drawText(self.screen1, self.username, 65, 20, (0,0,255),100)
                         pygame.display.update()
 
@@ -396,8 +396,8 @@ class loggingIn(buildConnection):
 
 
                         pygame.draw.rect(self.screen1,(40,40,40),(5,150,290,40))
-                        pygame.draw.rect(self.screen1,(0,0,0),(0,150,5,40))
-                        pygame.draw.rect(self.screen1,(0,0,0),(290,150,5,40))
+                        pygame.draw.rect(self.screen1,(40,40,40),(5,150,290,40))
+
 
                         self.drawText(self.screen1, "*" * len(self.password), 165, 30, (0,0,255),100)
                         pygame.display.update()
@@ -438,13 +438,12 @@ class getPlayer2( loggingIn):
 
 
     def __init__(self, class_b):
-        pygame.init()
-        self.listscreen = pygame.display.set_mode((200, 200))
+
         self.username2 = ''
         self.username = class_b.username
         self.x = 20
         self.y = 30
-        self.h = 0
+
         self.s = class_b.s
         self.down = 0
         self.up = 0
@@ -456,6 +455,18 @@ class getPlayer2( loggingIn):
         self.reqSent = []
         self.myReq = []
         self.word = ""
+
+    def textObjects(self,text,font):
+        textsurface = font.render(text,True,[255,255,255])
+        return textsurface,textsurface.get_rect()
+
+    def showMessage(self,text,screen):
+        largeText = pygame.font.Font("freesansbold.ttf",11)
+        textsurf,textrect = self.textObjects(text,largeText)
+        textrect.center = ((100),(100))
+        screen.blit(textsurf,textrect)
+        pygame.display.update()
+        time.sleep(2)
 
 
     def getSentence(self):
@@ -496,21 +507,32 @@ class getPlayer2( loggingIn):
         return text
 
     def getListOfPlayers(self):
+        pygame.init()
+        self.listscreen = pygame.display.set_mode((200, 200))
         self.listOfP = self.class_b.getUsers()
 
-        self.h = 30 + len(self.listOfP)*20
 
+        self.drawText(self.listscreen, "Choose a Friend", 10, 20, (180,0,0))
 
         for i in self.listOfP:
             self.dictOfP[5,self.y] = i
             self.drawText(self.listscreen, i, self.y, 20, (100,100,100))
             self.y += 20
 
-    def checkForReq(self):
+        self.y = 30
+        self.chooseOne()
+
+
+    def pickOne(self):
+
+        self.x = 0
+        self.y  = 30
+        self.toPlayWith = []
+        running = True
         therequests = self.class_b.getRequests()
         self.myReq = therequests
         if therequests != []:
-           # print("not empty")
+
             k = 10
             screen3 = pygame.display.set_mode((500, 200))
             pygame.init()
@@ -520,31 +542,21 @@ class getPlayer2( loggingIn):
 
                     self.drawText(screen3, i + ": Do you want to play?", k, 20, (100,100,100),300)
 
-                    pygame.draw.rect(screen3,(40,40,40),(300,k,50,20))
+                    pygame.draw.rect(screen3,(40,40,40),(400,k-10,50,20))
 
 
-                    self.drawText(screen3, "Yes", k, 20, (100,100,100),500)
+                    self.drawText(screen3, "Yes", k, 20, (0,0,0),850)
 
                     self.listOfReq[i] = k
-                    k += 10
+                    k += 50
                     pygame.display.update()
-        else:
-            pass
-    def pickOne(self):
-        running = True
 
-        self.getListOfPlayers()
-        self.x = 0
-        self.y  = 30
-        self.toPlayWith = []
-        self.checkForReq()
+
+        elif therequests == []:
+            running =  False
+            self.getListOfPlayers()
         while running:
-
-
-            therequests = self.class_b.getRequests()
-
             if therequests != []:
-
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         running = False
@@ -558,34 +570,33 @@ class getPlayer2( loggingIn):
 
                         for i in self.listOfReq:
 
-                            if (pX2 >= 425 and pX2<= 445 and pY2 >= self.listOfReq[i]  and pY2<= self.listOfReq[i] + 10):
+                            if (pX2 >= 400 and pX2<= 450 and pY2 >= self.listOfReq[i]-10  and pY2<= self.listOfReq[i] + 10):
                                 self.username2 = i
-                                #print(i)
+
                                 self.class_b.acceptFriendRequest(i)
                                 self.class_b.sendMessage(self.username2,"YES")
                                 print("yes sent")
-                                self.chooseOne()
+
                         pygame.display.update()
 
 
-            elif therequests == []:
-                #print("empty")
-                self.chooseOne()
+
+
 
 
 
 
 
     def chooseOne(self):
+
         running = True
-        self.myReq = self.class_b.getRequests()
-         
+
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                     quit()
-                    self.pickOne()
+
 
 
                 #if keystroke is pressed check whether it is right or left
@@ -596,49 +607,20 @@ class getPlayer2( loggingIn):
 
                     for i in self.dictOfP:
 
-                        if (pX2 >= 50 and pX2<= 160 and pY2 >= i[1]  and pY2<= i[1] + 20):
+                        if (pX2 >= 50 and pX2<= 160 and pY2 >= i[1]-10  and pY2<= i[1] + 10):
+
                             self.username2 = self.dictOfP[i]
                             self.class_b.sendFriendRequest(self.username2)
+                            self.showMessage("Request sent to "+self.username2 , self.listscreen)
                             self.reqSent.append(self.username2)
-
-
-
-
-
-                response = self.class_b.getMail(self.s)
-                for req in  self.reqSent:
-                    if response != ([],[]):
-                        for i in response[0]:
-                            if i[0] == req and i[1] == "YES":
-                                print("yes received")
-                                newToPlay = []
-                                for n in self.reqSent:
-                                    if n != i[0]:
-                                        newToPlay.append(n)
-                                self.reqSent = newToPlay
-                                
-                                print("start sent")
-                                word = self.getSentence()
-                                self.word = word
-                                self.class_b.sendMessage(i[0],"Start Game"+ self.word)
-                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 300,self.word)
-
-                for req in  self.myReq:
-                    if response != ([],[]):
-                        for i in response[0]:
-                            if i[0] == req and "Start Game" == i[0][:10]:
-                                self.word = i[0][10:]
-                                print("start received")
-                                theGame.gameloop(self.username, i[0], -50, 140,self.word)
-
-
-
+                            self.getListOfPlayers()
 
                 if event.type == pygame.KEYDOWN:
 
                     if event.key == pygame.K_UP:
                         self.dictOfP = {}
                         self.listscreen.fill((0,0,0))
+                        self.drawText(self.listscreen, "Choose a Friend", 10, 20, (180,0,0))
                         if self.down == 0:
                             self.down = 1
                         for i in self.listOfP[self.down -1:]:
@@ -654,10 +636,12 @@ class getPlayer2( loggingIn):
 
 
                     elif event.key == pygame.K_DOWN:
+
                         self.dictOfP = {}
                         self.down += 1
 
                         self.listscreen.fill((0,0,0))
+                        self.drawText(self.listscreen, "Choose a Friend", 10, 20, (180,0,0))
                         for i in self.listOfP[self.down:]:
                             self.dictOfP[5,self.y] = i
                             self.drawText(self.listscreen, i, self.y, 20, (100,100,100))
@@ -667,8 +651,38 @@ class getPlayer2( loggingIn):
 
                         self.y = 30
 
+                response = self.class_b.getMail(self.s)
+                if response != ([],[]):
+                    for req in  self.reqSent:
+                        for i in response[0]:
+                            if i[0] == req and i[1] == "YES":
+                                print("yes received")
+                                newToPlay = []
+                                for n in self.reqSent:
+                                    if n != i[0]:
+                                        newToPlay.append(n)
+                                self.reqSent = newToPlay
 
-            # print(self.toPlayWith)
+                                print("start sent")
+                                word = self.getSentence()
+                                self.word = word
+                                self.class_b.sendMessage(i[0],"Start Game"+ self.word)
+                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 300,self.word)
+
+                    for req in  self.myReq:
+                        for i in response[0]:
+                            if i[0] == req and "Start Game" == i[1][:10]:
+                                self.word = i[1][10:]
+                                print("start received")
+                                theGame.gameloop(self.username, i[0], -50, 140,self.word)
+
+
+                therequests = self.class_b.getRequests()
+                self.myReq = therequests
+                if therequests != []:
+                    self.pickOne()
+
+
 
             pygame.display.update()
 
