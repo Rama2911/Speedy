@@ -682,6 +682,7 @@ class getPlayer2( loggingIn):
                             print(i[1])
                             if i[0] == req and "Start Game" == i[1][:10]:
                                 self.word = i[1][10:]
+                                print(self.word)
                                 print("start received")
                                 theGame.gameloop(self.username, i[0], -50, 140,self.word)
 
