@@ -457,6 +457,43 @@ class getPlayer2( loggingIn):
         self.myReq = []
 
 
+    def getSentence(self):
+        url = "https://archive.vcu.edu/english/engweb/webtexts/bartleby/"
+        html = urlopen(url).read()
+        soup = BeautifulSoup(html, features="html.parser")
+
+        # kill all script and style elements
+        for script in soup(["script", "style"]):
+            script.extract()    # rip it out
+
+        # get text
+        text = soup.get_text()
+
+        # break into lines and remove leading and trailing space on each
+        lines = (line.strip() for line in text.splitlines())
+        # break multi-headlines into a line each
+        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+        # drop blank lines
+        text = '\n'.join(chunk for chunk in chunks if chunk)
+        lengthOfT = 81559
+
+        start = random.randint(0, lengthOfT-40)
+
+        text = text[start:start+150]
+        i = 0
+        c = 0
+
+        while text[i] != " ":
+            i += 1
+            c = i
+        text = text[i+1:]
+        text = text.rstrip()
+        i = 0
+        while text[35+i] != " ":
+            i += 1
+        text= text[: i + 35]
+        return text
+
     def getListOfPlayers(self):
         self.listOfP = self.class_b.getUsers()
 
@@ -576,13 +613,14 @@ class getPlayer2( loggingIn):
                                         newToPlay.append(n)
                                 self.reqSent = newToPlay
                                 self.class_b.sendMessage(i[0],"Start Game")
-                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 300)
+                                word = self.getSentence()
+                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 300,word)
 
                 for req in  self.myReq:
                     if response != ([],[]):
                         for i in response[0]:
                             if i[0] == req and i[1] == "Start Game":
-                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 140)
+                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 140,word)
 
 
 
@@ -704,42 +742,7 @@ class theGame(loggingIn, buildConnection):
         self.roadstrips2 = pygame.transform.scale(self.roadstrips2,(600,110))
 
         self.player2 = pygame.image.load("pinkcar5.png")
-    def getSentence(self):
-        url = "https://archive.vcu.edu/english/engweb/webtexts/bartleby/"
-        html = urlopen(url).read()
-        soup = BeautifulSoup(html, features="html.parser")
 
-        # kill all script and style elements
-        for script in soup(["script", "style"]):
-            script.extract()    # rip it out
-
-        # get text
-        text = soup.get_text()
-
-        # break into lines and remove leading and trailing space on each
-        lines = (line.strip() for line in text.splitlines())
-        # break multi-headlines into a line each
-        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-        # drop blank lines
-        text = '\n'.join(chunk for chunk in chunks if chunk)
-        lengthOfT = 81559
-
-        start = random.randint(0, lengthOfT-40)
-
-        text = text[start:start+150]
-        i = 0
-        c = 0
-
-        while text[i] != " ":
-            i += 1
-            c = i
-        text = text[i+1:]
-        text = text.rstrip()
-        i = 0
-        while text[40+i] != " ":
-            i += 1
-        text= text[: i + 40]
-        return text
 
 
     def getNewSpeed(self):
@@ -751,12 +754,12 @@ class theGame(loggingIn, buildConnection):
 
         self.check = ''
 
-    def gameloop(self,p1, p2, x1, y1):
+    def gameloop(self,p1, p2, x1, y1,word):
         c = 0
-        self.resetGame(p2)
+        self.resetGame(p2,word)
         self.running = True
         self.drawText(self.screen, self.word, 450, 28, (100,100,100))
-
+        
         self.firstPlayer(20,300)
         self.secondPlayer(20,150)
         xroad = -50
@@ -889,7 +892,7 @@ class theGame(loggingIn, buildConnection):
 
 
 
-    def resetGame(self,p2):
+    def resetGame(self,p2,word):
         self.screen.blit(self.gameBackground,(0,0))
         pygame.display.update()
         time.sleep(1)
@@ -904,7 +907,7 @@ class theGame(loggingIn, buildConnection):
         self.wpm = 0
 
         #getting a random sentence
-        self.word = self.getSentence()
+        self.word = word
         print(self.word)
         for i in self.word:
             self.wordSame += i
