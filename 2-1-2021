@@ -563,6 +563,7 @@ class getPlayer2( loggingIn):
                                 #print(i)
                                 self.class_b.acceptFriendRequest(i)
                                 self.class_b.sendMessage(self.username2,"YES")
+                                print("yes sent")
                                 self.chooseOne()
                         pygame.display.update()
 
@@ -582,8 +583,8 @@ class getPlayer2( loggingIn):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                    self.pickOne()
                     quit()
+                    self.pickOne()
 
 
                 #if keystroke is pressed check whether it is right or left
@@ -608,20 +609,23 @@ class getPlayer2( loggingIn):
                     if response != ([],[]):
                         for i in response[0]:
                             if i[0] == req and i[1] == "YES":
+                                print("yes received")
                                 newToPlay = []
                                 for n in self.reqSent:
                                     if n != i[0]:
                                         newToPlay.append(n)
                                 self.reqSent = newToPlay
                                 self.class_b.sendMessage(i[0],"Start Game")
+                                print("start sent")
                                 word = self.getSentence()
                                 self.word = word
-                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 300,word)
+                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 300,self.word)
 
                 for req in  self.myReq:
                     if response != ([],[]):
                         for i in response[0]:
                             if i[0] == req and i[1] == "Start Game":
+                                print("start received")
                                 theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 140,self.word)
 
 
