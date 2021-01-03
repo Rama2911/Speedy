@@ -615,18 +615,20 @@ class getPlayer2( loggingIn):
                                     if n != i[0]:
                                         newToPlay.append(n)
                                 self.reqSent = newToPlay
-                                self.class_b.sendMessage(i[0],"Start Game")
+                                
                                 print("start sent")
                                 word = self.getSentence()
                                 self.word = word
+                                self.class_b.sendMessage(i[0],"Start Game"+ self.word)
                                 theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 300,self.word)
 
                 for req in  self.myReq:
                     if response != ([],[]):
                         for i in response[0]:
-                            if i[0] == req and i[1] == "Start Game":
+                            if i[0] == req and "Start Game" == i[0][:10]:
+                                self.word = i[0][10:]
                                 print("start received")
-                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 140,self.word)
+                                theGame.gameloop(self.username, i[0], -50, 140,self.word)
 
 
 
@@ -765,7 +767,7 @@ class theGame(loggingIn, buildConnection):
         self.resetGame(p2,word)
         self.running = True
         self.drawText(self.screen, self.word, 450, 28, (100,100,100))
-        
+
         self.firstPlayer(20,300)
         self.secondPlayer(20,150)
         xroad = -50
