@@ -8,7 +8,7 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from pygame import mixer
 
-
+##Sulaiman,R (2020, October, 20), Python Project on Chat Client. Retrieved January 04, 2021
 class buildConnection:
 
     def __init__(self,ipaddress,portnum):
@@ -293,6 +293,7 @@ class buildConnection:
         if ("@ok" in response) or ("@no such friend request" in response):
             return True
         return False
+##
 
 class loggingIn(buildConnection):
 
@@ -668,10 +669,10 @@ class getPlayer2( loggingIn):
                                 for i in range(4):
                                     word = self.getSentence()
                                     self.word.append(word)
-                                self.class_b.sendMessage(i[0],"Start1"+ self.word[0])
-                                self.class_b.sendMessage(i[0],"Start2"+ self.word[1])
-                                self.class_b.sendMessage(i[0],"Start3"+ self.word[2])
-                                self.class_b.sendMessage(i[0],"Start4"+ self.word[3])
+                                self.class_b.sendMessage(i[0],"Start1"+ str(self.word[0]))
+                                self.class_b.sendMessage(i[0],"Start2"+ str(self.word[1]))
+                                self.class_b.sendMessage(i[0],"Start3"+ str(self.word[2]))
+                                self.class_b.sendMessage(i[0],"Start4"+ str(self.word[3]))
                                 
                                 
 
@@ -703,21 +704,12 @@ class getPlayer2( loggingIn):
 
             pygame.display.update()
 
-
-
-
-
     def drawText(self, screen, msg, y, size, color, x = 200):
         font = pygame.font.Font(None,size)
         text = font.render(msg,1,color)
         text_rect = text.get_rect(center = (x//2,y))
         screen.blit(text, text_rect)
         pygame.display.update()
-
-
-
-
-
 
 class theGame(loggingIn, buildConnection):
 
@@ -801,8 +793,7 @@ class theGame(loggingIn, buildConnection):
         xroad = -50
         counting = 0
 
-        print("you" + self.username)
-        print("he "+ self.username2)
+        
         while self.running:
             clock = pygame.time.Clock()
 
@@ -820,17 +811,17 @@ class theGame(loggingIn, buildConnection):
                 if event.type == pygame.MOUSEBUTTONUP:
                     pX, pY = pygame.mouse.get_pos()
 
+##(2020, September 19)Python Project on Typing Speed Test - Build your first game in Python. Retrieved January 04, 2021, from ##https://techvidvan.com/tutorials/project-in-python-typing-speed-test/
                     #position of input box
                     if (pX >= 0 and pX<= 500 and pY >= 450  and pY<= 550 ):
                         self.active = True
-                        #self.textEntered = ''
+                        
                         self.startTime = time.time()
 
 
                 elif event.type == pygame.KEYDOWN:
                     if self.active and not self.end:
-                        #print("1")
-
+                        
                         if event.key == pygame.K_BACKSPACE:
                             self.textEntered = self.textEntered[:-1]
                         #
@@ -838,11 +829,10 @@ class theGame(loggingIn, buildConnection):
                             try:
 
                                 self.textEntered += event.unicode
+##
                                 
-                                #print(self.textEntered)
                                 self.check = self.textEntered[-1]
-                                #print( self.word[0] +" and "+self.check[0] )
-                                #print( self.textEntered +" & " +  self.wordSame[:len(self.textEntered)])
+
                                 if self.check[0] == self.word[k][0] and self.textEntered == self.wordSame[:len(self.textEntered)]:
                                     self.word[k] = self.word[k][1:]
                                     if self.word[k][0] == "":
@@ -868,9 +858,6 @@ class theGame(loggingIn, buildConnection):
 
                             except:
                                 pass
-
-
-
 
 
                 x1 = x1 + (self.newSpeed)
@@ -935,7 +922,7 @@ class theGame(loggingIn, buildConnection):
         clock.tick(60)
 
 
-
+##(2020, September 19)Python Project on Typing Speed Test - Build your first game in Python. Retrieved January 04, 2021, from ##https://techvidvan.com/tutorials/project-in-python-typing-speed-test/
     def resetGame(self,p2,word):
         self.screen.blit(self.gameBackground,(0,0))
         pygame.display.update()
@@ -955,7 +942,7 @@ class theGame(loggingIn, buildConnection):
             self.wordSame.append(i)
         if (not self.word) :
             self.resetGame(p2,self.word)
-
+##
         self.screen.fill((0,0,0))
         self.screen.blit(self.backgroundPic,(0,110))
 
@@ -972,11 +959,6 @@ class theGame(loggingIn, buildConnection):
         self.screen.blit(self.roadstrips,(-50,300))
         self.firstPlayer(20,300)
         self.secondPlayer(20,150)
-
-
-
-
-
 
 
     def firstPlayer(self,x,y):
@@ -1015,33 +997,5 @@ class theGame(loggingIn, buildConnection):
         screen.blit(text, text_rect)
         pygame.display.update()
 
-
-    def sliceString(self,stringOfMail,word):
-        lst = []
-        #size is the first 5 chr after the first "@"
-        size = int(stringOfMail[1:6])
-         #checking if the size > 1000 to recieve again the rest of the message
-        if size > 1000:
-            msg = self.s.recv(size-1000)
-            msg = msg.decode()
-            stringOfMail += msg
-        #removing @size@ from message of form @size@n@msg@[user1]@[message1]..no
-        for i in stringOfMail[7:]:
-            if i == "@":
-                lst.append(word)
-                word = ""
-            else:
-                word += i
-        #appending the last name in the list
-        lst.append(word)
-        return lst
-
 myLogIn = loggingIn()
-
-
-#Conn = buildConnection()
-
 myLogIn.getCred()
-myGame = theGame(myLogIn)
-
-
