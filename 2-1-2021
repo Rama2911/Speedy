@@ -1,3 +1,5 @@
+# Rama Sulaiman
+# rsulaima
 import pygame
 import random
 import time
@@ -867,7 +869,7 @@ class theGame(loggingIn, buildConnection):
                 #If you Won
                 if self.word =="":
 
-                    self.word= self.get
+                    
 
                     self.end = True
                     self.class_a.sendMessage(self.username2, "You Lost!")
@@ -1004,3 +1006,6 @@ class theGame(loggingIn, buildConnection):
 
 myLogIn = loggingIn()
 myLogIn.getCred()
+
+
+
