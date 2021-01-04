@@ -684,7 +684,7 @@ class getPlayer2( loggingIn):
                                 self.word = i[1][10:]
                                 print(self.word)
                                 print("start received")
-                                theGame.gameloop(self.username, i[0], -50, 140,self.word)
+                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 140,self.word)
 
 
                 therequests = self.class_b.getRequests()
@@ -797,7 +797,8 @@ class theGame(loggingIn, buildConnection):
         self.secondPlayer(20,150)
         xroad = -50
 
-
+        print("you" + self.username)
+        print("he "+ self.username2)
         while self.running:
             clock = pygame.time.Clock()
 
@@ -818,7 +819,7 @@ class theGame(loggingIn, buildConnection):
                     #position of input box
                     if (pX >= 0 and pX<= 500 and pY >= 450  and pY<= 550 ):
                         self.active = True
-                        self.textEntered = ''
+                        #self.textEntered = ''
                         self.startTime = time.time()
 
 
@@ -833,6 +834,7 @@ class theGame(loggingIn, buildConnection):
                             try:
 
                                 self.textEntered += event.unicode
+                                
                                 #print(self.textEntered)
                                 self.check = self.textEntered[-1]
                                 #print( self.word[0] +" and "+self.check[0] )
@@ -1047,5 +1049,6 @@ myLogIn = loggingIn()
 
 myLogIn.getCred()
 myGame = theGame(myLogIn)
+
 
 
