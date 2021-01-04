@@ -6,7 +6,6 @@ from pygame.locals import *
 import socket
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
-#import pafy
 from pygame import mixer
 
 
@@ -454,7 +453,7 @@ class getPlayer2( loggingIn):
         self.toPlayWith = []
         self.reqSent = []
         self.myReq = []
-        self.word = ""
+        self.word = []
         self.screen3 = ""
 
     def textObjects(self,text,font):
@@ -666,25 +665,33 @@ class getPlayer2( loggingIn):
                                         newToPlay.append(n)
                                 self.reqSent = newToPlay
 
+                                for i in range(4):
+                                    word = self.getSentence()
+                                    self.word.append(word)
+                                self.class_b.sendMessage(i[0],"Start1"+ self.word[0])
+                                self.class_b.sendMessage(i[0],"Start2"+ self.word[1])
+                                self.class_b.sendMessage(i[0],"Start3"+ self.word[2])
+                                self.class_b.sendMessage(i[0],"Start4"+ self.word[3])
+                                
+                                
 
-                                word = self.getSentence()
-                                self.word = word
-                                self.class_b.sendMessage(i[0],"Start Game"+ self.word)
-                                print("Start Game"+ self.word)
-                                print("start sent")
-
-                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 300,self.word)
+                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 300)
                     print("it isss:  ")
                     print(self.myReq)
                     for req in  self.myReq:
                         for i in response[0]:
-                            print("here: ")
-                            print(i[1])
-                            if i[0] == req and "Start Game" == i[1][:10]:
-                                self.word = i[1][10:]
-                                print(self.word)
-                                print("start received")
-                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 140,self.word)
+                            if "Start" in i:
+                            
+                                if i[0] == req and "Start1" == i[1][:10]:
+                                    self.word[0] = i[1][10:]
+                                if i[0] == req and "Start2" == i[1][:10]:
+                                    self.word[1] = i[1][10:]
+                                if i[0] == req and "Start3" == i[1][:10]:
+                                    self.word[2] = i[1][10:]
+                                if i[0] == req and "Start4" == i[1][:10]:
+                                    self.word[3] = i[1][10:]
+                                    
+                                theGame(myLogIn,i[0],False).gameloop(self.username, i[0], -50, 140)
 
 
                 therequests = self.class_b.getRequests()
@@ -735,10 +742,6 @@ class theGame(loggingIn, buildConnection):
         self.lengthOfText = 0
         self.check = ""
         self.wordSame = ''
-        #self.xroad1 = -50
-        #self.yroad1 = 300
-        #self.xroad2 = -50
-        #self.yroad2 = 140
         self.newSpeed = 0
 
         self.gameBackground = ""
@@ -779,23 +782,24 @@ class theGame(loggingIn, buildConnection):
 
 
     def getNewSpeed(self):
-        print("heyyy")
+        
         self.getResults(self.screen)
 
         self.newSpeed = self.wpm
 
-
         self.check = ''
 
-    def gameloop(self,p1, p2, x1, y1,word):
+    def gameloop(self,p1, p2, x1, y1):
         c = 0
+        k = 0
         self.resetGame(p2,word)
         self.running = True
-        self.drawText(self.screen, self.word, 450, 28, (100,100,100))
+        self.drawText(self.screen, self.word[k], 450, 28, (100,100,100))
 
         self.firstPlayer(20,300)
         self.secondPlayer(20,150)
         xroad = -50
+        counting = 0
 
         print("you" + self.username)
         print("he "+ self.username2)
@@ -839,13 +843,24 @@ class theGame(loggingIn, buildConnection):
                                 self.check = self.textEntered[-1]
                                 #print( self.word[0] +" and "+self.check[0] )
                                 #print( self.textEntered +" & " +  self.wordSame[:len(self.textEntered)])
-                                if self.check[0] == self.word[0] and self.textEntered == self.wordSame[:len(self.textEntered)]:
-                                    self.word = self.word[1:]
+                                if self.check[0] == self.word[k][0] and self.textEntered == self.wordSame[:len(self.textEntered)]:
+                                    self.word[k] = self.word[k][1:]
+                                    if self.word[k][0] == "":
+                                        k += 1
+                                        if k == 5 and self.word[k] == []:
+                                            self.end = True
+                                            self.class_a.sendMessage(self.username2, "You Lost!")
+                                            self.getResults(self.screen)
+                                            self.drawText(self.screen, self.results+ "You Won!", 20, 28, (0,0,255))
+                                            pygame.display.update()
+                                            
+                                            
                                     self.screen.fill((0,0,0),(0,435,550,50))
-                                    self.drawText(self.screen, self.word, 450, 28, (255,0,0))
-                                    print("hey1")
+                                    
+                                    self.drawText(self.screen, self.word[k], 450, 28, (255,0,0))
+                                    
                                     self.getNewSpeed()
-                                    print("hey2")
+                                    
                                     pygame.display.update()
 
 
@@ -874,13 +889,7 @@ class theGame(loggingIn, buildConnection):
                 self.secondPlayer(20,150)
                 pygame.display.update()
 
-                #If you Won
-                if self.word =="":
-                    self.end = True
-                    self.class_a.sendMessage(self.username2, "You Lost!")
-                    self.getResults(self.screen)
-                    self.drawText(self.screen, self.results+ "You Won!", 20, 28, (0,0,255))
-                    pygame.display.update()
+                
 
                 p2Comm = self.class_a.getMail(self.s)
                 #print(p2Comm)
@@ -936,18 +945,16 @@ class theGame(loggingIn, buildConnection):
         self.end = False
 
         self.textEntered = ''
-        self.word = ''
+        self.word = []
         self.startTime = 0
         self.totalTime = 0
         self.wpm = 0
 
-        #getting a random sentence
-        self.word = word
-        print(self.word)
+        
         for i in self.word:
-            self.wordSame += i
+            self.wordSame.append(i)
         if (not self.word) :
-            self.resetGame(p2,word)
+            self.resetGame(p2,self.word)
 
         self.screen.fill((0,0,0))
         self.screen.blit(self.backgroundPic,(0,110))
@@ -988,19 +995,6 @@ class theGame(loggingIn, buildConnection):
             #calculating the time
             self.timeSpent = time.time() - self.startTime
 
-            #calculating accuracy
-            count = 0
-            for i,c in enumerate(self.wordSame):
-                try:
-                    if self.textEntered[i] == c:
-                        count += 1
-                except:
-                    pass
-
-
-
-            #self.accuracy = count/self.lengthOfText*100
-
             #calculating the speed wpm
             self.wpm = len(self.textEntered)*60 / (5*self.timeSpent)
 
@@ -1008,8 +1002,8 @@ class theGame(loggingIn, buildConnection):
             self.end = False
 
 
-            self.results = str(round(self.timeSpent))+ "acc" + str((self.accuracy))+ "wpm"+str(self.wpm)
-            print(self.results)
+            self.results = str(self.wpm)+ "wpm"
+            
             pygame.display.update()
 
 
@@ -1049,6 +1043,5 @@ myLogIn = loggingIn()
 
 myLogIn.getCred()
 myGame = theGame(myLogIn)
-
 
 
